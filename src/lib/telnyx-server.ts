@@ -1,12 +1,14 @@
 import Telnyx from "telnyx";
 
-let _client: ReturnType<typeof Telnyx> | null = null;
+type TelnyxClient = InstanceType<typeof Telnyx>;
 
-export function telnyx() {
+let _client: TelnyxClient | null = null;
+
+export function telnyx(): TelnyxClient {
   if (_client) return _client;
   const key = process.env.TELNYX_API_KEY;
   if (!key) throw new Error("TELNYX_API_KEY not set");
-  _client = Telnyx(key);
+  _client = new Telnyx(key);
   return _client;
 }
 
