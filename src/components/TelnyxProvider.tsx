@@ -8,6 +8,7 @@ import { toE164 } from "@/lib/utils";
 type TelnyxCall = {
   id: string;
   remoteCallerNumber?: string;
+  remoteStream?: MediaStream;
   options?: { destinationNumber?: string; callerNumber?: string };
   hangup: () => void;
   answer: () => void;
@@ -45,6 +46,7 @@ export function TelnyxProvider({ children }: { children: React.ReactNode }) {
   const currentCall = useRef<TelnyxCall | null>(null);
   const currentLeadId = useRef<string | null>(null);
   const localCallRowId = useRef<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const {
     setReady,
@@ -119,10 +121,17 @@ export function TelnyxProvider({ children }: { children: React.ReactNode }) {
             });
           } else if (state === "active") {
             updateActiveCall({ state: "active" });
+            if (call.remoteStream && audioRef.current) {
+              audioRef.current.srcObject = call.remoteStream;
+              audioRef.current.play().catch((e) => console.warn("audio play failed", e));
+            }
           } else if (state === "held") {
             updateActiveCall({ state: "held" });
           } else if (state === "hangup" || state === "destroy") {
             updateActiveCall({ state: "ended" });
+            if (audioRef.current) {
+              audioRef.current.srcObject = null;
+            }
             setTimeout(() => setActiveCall(null), 800);
             currentCall.current = null;
             currentLeadId.current = null;
@@ -156,7 +165,6 @@ export function TelnyxProvider({ children }: { children: React.ReactNode }) {
     if (!from) throw new Error("no_from_number_selected");
     currentLeadId.current = opts?.leadId ?? null;
 
-    // Optimistic local call row so disposition UI can save against an id.
     try {
       const r = await fetch("/api/calls", {
         method: "POST",
@@ -213,7 +221,13 @@ export function TelnyxProvider({ children }: { children: React.ReactNode }) {
     sendDTMF: (digit) => currentCall.current?.dtmf?.(digit),
   };
 
-  return <TelnyxContext.Provider value={ctx}>{children}</TelnyxContext.Provider>;
+  return (
+    <TelnyxContext.Provider value={ctx}>
+      {/* Hidden audio element for remote call audio */}
+      <audio ref={audioRef} autoPlay playsInline style={{ display: "none" }} />
+      {children}
+    </TelnyxContext.Provider>
+  );
 }
 
 export function getLocalCallRowId() {
