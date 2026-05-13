@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/db";
 import { calls, recordings } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import type { TelnyxWebhookPayload } from "@/lib/telnyx-server";
+import { telnyx, type TelnyxWebhookPayload } from "@/lib/telnyx-server";
 
 export const runtime = "nodejs";
 
@@ -43,6 +43,16 @@ export async function POST(req: NextRequest) {
           .update(calls)
           .set({ status: "answered", answeredAt: new Date() })
           .where(eq(calls.telnyxCallControlId, callControlId));
+        // Start recording every call: MP3, dual channels (per setup spec)
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (telnyx().calls as any).recordStart(callControlId, {
+            format: "mp3",
+            channels: "dual",
+          });
+        } catch (recErr) {
+          console.error("record.start failed", recErr);
+        }
         break;
       }
 
@@ -78,9 +88,9 @@ export async function POST(req: NextRequest) {
         if (!call) break;
         await db.insert(recordings).values({
           callId: call.id,
-          telnyxRecordingId: p.recording_id ?? null,
+          telnyxRecordingId: String(p.recording_id ?? ""),
           url: p.recording_urls?.mp3 ?? p.recording_urls?.wav ?? null,
-          durationSec: p.duration_sec ?? null,
+          durationSec: typeof p.duration_sec === "number" ? p.duration_sec : null,
           format: p.recording_urls?.mp3 ? "mp3" : "wav",
         });
         break;
