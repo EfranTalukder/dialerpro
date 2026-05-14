@@ -122,15 +122,15 @@ export default function LeadsGrid() {
   );
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search…"
-            className="input w-56"
+            className="input w-full sm:w-56"
           />
           {selected.size > 0 && (
             <button
@@ -143,13 +143,13 @@ export default function LeadsGrid() {
             </button>
           )}
           <button onClick={() => setAdding(true)} className="btn btn-outline">
-            <Plus size={16} /> Add lead
+            <Plus size={16} /> <span className="hidden sm:inline">Add lead</span>
           </button>
           <button onClick={() => setAddingCol(true)} className="btn btn-outline">
-            <Plus size={16} /> Column
+            <Plus size={16} /> <span className="hidden sm:inline">Column</span>
           </button>
           <label className="btn btn-outline cursor-pointer">
-            <Upload size={16} /> CSV
+            <Upload size={16} /> <span className="hidden sm:inline">CSV</span>
             <input
               type="file"
               accept=".csv,text/csv"
@@ -164,7 +164,57 @@ export default function LeadsGrid() {
         </div>
       </div>
 
-      <div className="mt-4 card overflow-auto">
+      {/* Mobile card list */}
+      <div className="mt-4 md:hidden space-y-2">
+        {leads.length === 0 ? (
+          <div className="card p-8 text-center text-sm text-muted">
+            No leads yet. Add one or import a CSV.
+          </div>
+        ) : (
+          leads.map((l) => (
+            <div key={l.id} className="card p-3">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={selected.has(l.id)}
+                  onChange={() => toggleSelected(l.id)}
+                  className="accent-accent mt-1.5"
+                />
+                <Link href={`/leads/${l.id}`} className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">
+                    {l.name || l.phone || "(no name)"}
+                  </div>
+                  <div className="text-xs text-muted truncate">
+                    {l.phone}
+                    {l.company && <span className="ml-2">· {l.company}</span>}
+                  </div>
+                  {l.status && l.status !== "new" && (
+                    <span className="inline-block mt-1 px-1.5 py-0.5 bg-elevated rounded text-[10px] uppercase tracking-wider">
+                      {l.status}
+                    </span>
+                  )}
+                </Link>
+                <button
+                  disabled={!ready}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startCall(l.phone, { leadId: l.id }).catch((err: Error) =>
+                      alert(err.message),
+                    );
+                  }}
+                  className="w-10 h-10 grid place-items-center rounded-full bg-accent/10 active:bg-accent/30 text-accent transition-colors disabled:opacity-40 shrink-0"
+                  aria-label="Call"
+                >
+                  <Phone size={16} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="mt-4 hidden md:block card overflow-auto">
         <table className="w-full text-sm">
           <thead className="bg-elevated text-muted text-xs uppercase tracking-wider">
             <tr>

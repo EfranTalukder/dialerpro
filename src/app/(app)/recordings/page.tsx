@@ -29,51 +29,69 @@ export default function RecordingsPage() {
   }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Calls & Recordings</h1>
-      <p className="text-sm text-muted mt-1">Every call you make is logged here. Recordings appear within ~30 seconds after hangup.</p>
+    <div className="p-4 sm:p-6">
+      <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Calls & Recordings</h1>
+      <p className="text-sm text-muted mt-1">
+        Every call you make is logged here. Recordings appear within ~30 seconds after hangup.
+      </p>
 
       <div className="mt-6 space-y-2">
         {rows.map((r) => (
-          <div key={r.call.id} className="card p-4 flex items-center gap-4">
-            <div className="w-8 h-8 grid place-items-center rounded-lg bg-elevated">
-              {r.call.direction === "outbound" ? <Phone size={14} /> : <PhoneIncoming size={14} />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">
-                {r.call.direction === "outbound"
-                  ? fmtPhone(r.call.toNumber)
-                  : fmtPhone(r.call.fromNumber)}
-              </div>
-              <div className="text-xs text-muted">
-                {new Date(r.call.startedAt).toLocaleString()} ·{" "}
-                {fmtDuration(r.call.durationSec)} ·{" "}
-                via {r.call.direction === "outbound" ? r.call.fromNumber : r.call.toNumber}
-                {r.call.disposition && (
-                  <span className="ml-2 px-1.5 py-0.5 bg-elevated rounded text-[10px]">{r.call.disposition}</span>
+          <div
+            key={r.call.id}
+            className="card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
+          >
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-8 h-8 grid place-items-center rounded-lg bg-elevated shrink-0">
+                {r.call.direction === "outbound" ? (
+                  <Phone size={14} />
+                ) : (
+                  <PhoneIncoming size={14} />
                 )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">
+                  {r.call.direction === "outbound"
+                    ? fmtPhone(r.call.toNumber)
+                    : fmtPhone(r.call.fromNumber)}
+                </div>
+                <div className="text-xs text-muted truncate">
+                  {new Date(r.call.startedAt).toLocaleString()} ·{" "}
+                  {fmtDuration(r.call.durationSec)}
+                  {r.call.disposition && (
+                    <span className="ml-2 px-1.5 py-0.5 bg-elevated rounded text-[10px] uppercase tracking-wider">
+                      {r.call.disposition.replace(/_/g, " ")}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-muted mt-0.5 truncate">
+                  via{" "}
+                  {r.call.direction === "outbound"
+                    ? r.call.fromNumber
+                    : r.call.toNumber}
+                </div>
               </div>
             </div>
 
             {r.recordingId ? (
-              <>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <audio
                   src={`/api/recordings/${r.recordingId}/audio`}
                   controls
                   preload="none"
-                  className="h-9"
+                  className="h-9 flex-1 sm:w-64 max-w-full"
                 />
                 <a
                   href={`/api/recordings/${r.recordingId}/audio`}
                   download
-                  className="btn btn-ghost"
+                  className="btn btn-ghost shrink-0"
                   title="Download"
                 >
                   <Download size={16} />
                 </a>
-              </>
+              </div>
             ) : (
-              <span className="text-xs text-muted">
+              <span className="text-xs text-muted sm:ml-auto">
                 {r.call.status === "ended" ? "Processing…" : "—"}
               </span>
             )}

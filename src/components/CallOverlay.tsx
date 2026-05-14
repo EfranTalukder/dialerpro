@@ -23,7 +23,9 @@ export default function CallOverlay() {
     call.state === "active" ? Math.floor((now - call.startedAt) / 1000) : 0;
 
   return (
-    <div className="fixed bottom-6 right-6 w-80 card shadow-card p-5 z-50">
+    <div className="fixed z-50 card shadow-card
+      bottom-[calc(env(safe-area-inset-bottom)+68px)] left-3 right-3 p-4
+      md:bottom-6 md:right-6 md:left-auto md:w-80 md:p-5">
       <div className="text-xs uppercase tracking-wider text-muted">
         {call.direction === "outbound" ? "Calling" : "Incoming"}
         {call.localNumber && (

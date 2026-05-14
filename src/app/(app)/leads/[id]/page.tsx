@@ -101,8 +101,8 @@ export default function LeadDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 max-w-4xl">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <Link
           href="/leads"
           className="text-sm text-muted hover:text-text inline-flex items-center gap-1.5"
@@ -118,7 +118,9 @@ export default function LeadDetailPage() {
             }
             className="btn btn-primary disabled:opacity-40"
           >
-            <Phone size={16} /> Call {fmtPhone(lead.phone)}
+            <Phone size={16} />
+            <span className="hidden sm:inline">Call {fmtPhone(lead.phone)}</span>
+            <span className="sm:hidden">Call</span>
           </button>
           <button onClick={remove} className="btn btn-ghost text-danger">
             <Trash2 size={16} />

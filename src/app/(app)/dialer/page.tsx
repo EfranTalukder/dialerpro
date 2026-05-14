@@ -26,8 +26,8 @@ export default function DialerPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Dialer</h1>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Dialer</h1>
       <p className="text-sm text-muted mt-1">
         Pick a number to call from, then dial.
       </p>

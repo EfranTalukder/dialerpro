@@ -63,8 +63,8 @@ export default function CallbacksPage() {
   );
 
   return (
-    <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Callbacks</h1>
+    <div className="p-4 sm:p-6 max-w-3xl">
+      <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Callbacks</h1>
       <p className="text-sm text-muted mt-1">
         Scheduled follow-ups, sorted by due time. Mark done when complete.
       </p>

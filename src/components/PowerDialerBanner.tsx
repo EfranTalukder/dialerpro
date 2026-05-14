@@ -12,7 +12,8 @@ export default function PowerDialerBanner() {
   const remaining = pd.leads.length - pd.currentIndex - 1;
 
   return (
-    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-40 card px-4 py-2.5 shadow-card flex items-center gap-4">
+    <div className="fixed left-1/2 -translate-x-1/2 z-40 card px-4 py-2.5 shadow-card flex items-center gap-4 max-w-[calc(100vw-1.5rem)]
+      top-[64px] md:top-3">
       <div className="flex items-center gap-2 text-sm">
         <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
         <span className="font-medium">Power dialer</span>

@@ -46,8 +46,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+    <div className="p-4 sm:p-6 max-w-2xl">
+      <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
 
       <section className="mt-6">
         <h2 className="text-sm uppercase tracking-wider text-muted">Your Telnyx Numbers</h2>
@@ -72,7 +72,7 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-col sm:flex-row gap-2">
           <input
             className="input"
             placeholder="+14155551234"
@@ -80,7 +80,7 @@ export default function SettingsPage() {
             onChange={(e) => setE164(e.target.value)}
           />
           <input
-            className="input w-48"
+            className="input sm:w-48"
             placeholder="Label (optional)"
             value={label}
             onChange={(e) => setLabel(e.target.value)}

@@ -49,7 +49,9 @@ export default function QuickCallFAB() {
       {open && (
         <div
           ref={popoverRef}
-          className="fixed bottom-24 right-6 z-40 w-80 card p-5 shadow-card"
+          className="fixed z-40 card shadow-card
+            bottom-[calc(env(safe-area-inset-bottom)+136px)] left-3 right-3 p-4
+            md:bottom-24 md:right-6 md:left-auto md:w-80 md:p-5"
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold">Quick call</h3>
@@ -93,7 +95,9 @@ export default function QuickCallFAB() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-accent hover:bg-accentMuted text-white grid place-items-center shadow-card transition-colors"
+        className="fixed z-40 w-14 h-14 rounded-full bg-accent hover:bg-accentMuted active:scale-95 text-white grid place-items-center shadow-card transition-all
+          bottom-[calc(env(safe-area-inset-bottom)+72px)] right-4
+          md:bottom-6 md:right-6"
         title="Quick call"
       >
         <Phone size={20} />
