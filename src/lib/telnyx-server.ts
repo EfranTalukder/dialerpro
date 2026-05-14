@@ -26,7 +26,9 @@ export type TelnyxWebhookPayload = {
       direction?: "incoming" | "outgoing";
       recording_id?: string;
       recording_urls?: { mp3?: string; wav?: string };
+      public_recording_urls?: { mp3?: string; wav?: string };
       duration_sec?: number;
+      duration_millis?: number;
     };
   };
   meta: { attempt: number; delivered_to: string };

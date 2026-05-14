@@ -55,11 +55,16 @@ export default function RecordingsPage() {
               </div>
             </div>
 
-            {r.recordingUrl ? (
+            {r.recordingId ? (
               <>
-                <audio src={r.recordingUrl} controls className="h-9" />
+                <audio
+                  src={`/api/recordings/${r.recordingId}/audio`}
+                  controls
+                  preload="none"
+                  className="h-9"
+                />
                 <a
-                  href={r.recordingUrl}
+                  href={`/api/recordings/${r.recordingId}/audio`}
                   download
                   className="btn btn-ghost"
                   title="Download"

@@ -86,12 +86,26 @@ export async function POST(req: NextRequest) {
             .limit(1)
         )[0];
         if (!call) break;
+        // Prefer public_recording_urls (no auth needed) over recording_urls (API-key gated).
+        // Both are short-lived; the recordings audio route refreshes via the API as a fallback.
+        const publicUrl =
+          p.public_recording_urls?.mp3 ?? p.public_recording_urls?.wav ?? null;
+        const apiUrl = p.recording_urls?.mp3 ?? p.recording_urls?.wav ?? null;
+        const durationSec =
+          typeof p.duration_sec === "number"
+            ? p.duration_sec
+            : typeof p.duration_millis === "number"
+              ? Math.round(p.duration_millis / 1000)
+              : null;
         await db.insert(recordings).values({
           callId: call.id,
           telnyxRecordingId: String(p.recording_id ?? ""),
-          url: p.recording_urls?.mp3 ?? p.recording_urls?.wav ?? null,
-          durationSec: typeof p.duration_sec === "number" ? p.duration_sec : null,
-          format: p.recording_urls?.mp3 ? "mp3" : "wav",
+          url: publicUrl ?? apiUrl,
+          durationSec,
+          format:
+            (p.public_recording_urls?.mp3 ?? p.recording_urls?.mp3)
+              ? "mp3"
+              : "wav",
         });
         break;
       }
