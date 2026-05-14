@@ -46,6 +46,8 @@ export default function LeadsGrid() {
   const ready = useTelnyxStore((s) => s.ready);
   const activeCall = useTelnyxStore((s) => s.activeCall);
   const startPower = useTelnyxStore((s) => s.startPowerDialer);
+  const pickFromPerCall = useTelnyxStore((s) => s.pickFromPerCall);
+  const setPendingNextCall = useTelnyxStore((s) => s.setPendingNextCall);
   const { startCall } = useTelnyx();
 
   function toggleSelected(id: string) {
@@ -71,6 +73,10 @@ export default function LeadsGrid() {
     startPower(queue);
     setSelected(new Set());
     const first = queue[0];
+    if (pickFromPerCall) {
+      setPendingNextCall(first);
+      return;
+    }
     startCall(first.phone, { leadId: first.id }).catch((e: Error) => alert(e.message));
   }
 

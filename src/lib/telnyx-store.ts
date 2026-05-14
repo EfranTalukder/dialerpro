@@ -40,6 +40,12 @@ export type PowerDialerQueue = {
   currentIndex: number;
 };
 
+export type PendingNextCall = {
+  id: string;
+  phone: string;
+  name: string | null;
+};
+
 type Store = {
   ready: boolean;
   registering: boolean;
@@ -49,6 +55,8 @@ type Store = {
   activeCall: ActiveCall | null;
   pendingDisposition: PendingDisposition | null;
   autoRotation: AutoRotation;
+  pickFromPerCall: boolean;
+  pendingNextCall: PendingNextCall | null;
   powerDialer: PowerDialerQueue | null;
 
   setReady: (b: boolean) => void;
@@ -60,6 +68,8 @@ type Store = {
   updateActiveCall: (patch: Partial<ActiveCall>) => void;
   setPendingDisposition: (d: PendingDisposition | null) => void;
   setAutoRotation: (a: AutoRotation) => void;
+  setPickFromPerCall: (b: boolean) => void;
+  setPendingNextCall: (n: PendingNextCall | null) => void;
   startPowerDialer: (
     leads: { id: string; phone: string; name: string | null }[],
   ) => void;
@@ -69,6 +79,21 @@ type Store = {
 
 const AUTO_ROTATION_KEY = "pd_auto_rotation";
 const RR_INDEX_KEY = "pd_rr_index";
+const PICK_FROM_PER_CALL_KEY = "pd_pick_from_per_call";
+
+function loadPickFromPerCall(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(PICK_FROM_PER_CALL_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function savePickFromPerCall(b: boolean) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PICK_FROM_PER_CALL_KEY, b ? "1" : "0");
+}
 
 function loadAutoRotation(): AutoRotation {
   if (typeof window === "undefined") return { enabled: false, mode: "round-robin" };
@@ -115,6 +140,8 @@ export const useTelnyxStore = create<Store>((set, get) => ({
   activeCall: null,
   pendingDisposition: null,
   autoRotation: loadAutoRotation(),
+  pickFromPerCall: loadPickFromPerCall(),
+  pendingNextCall: null,
   powerDialer: null,
 
   setReady: (b) => set({ ready: b }),
@@ -139,6 +166,11 @@ export const useTelnyxStore = create<Store>((set, get) => ({
     saveAutoRotation(a);
     set({ autoRotation: a });
   },
+  setPickFromPerCall: (b) => {
+    savePickFromPerCall(b);
+    set({ pickFromPerCall: b });
+  },
+  setPendingNextCall: (n) => set({ pendingNextCall: n }),
   startPowerDialer: (leads) =>
     set({ powerDialer: { leads, currentIndex: 0 } }),
   advancePowerDialer: () => {
@@ -152,5 +184,5 @@ export const useTelnyxStore = create<Store>((set, get) => ({
     set({ powerDialer: { ...cur, currentIndex: next } });
     return cur.leads[next];
   },
-  cancelPowerDialer: () => set({ powerDialer: null }),
+  cancelPowerDialer: () => set({ powerDialer: null, pendingNextCall: null }),
 }));

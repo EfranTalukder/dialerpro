@@ -3,6 +3,7 @@ import { TelnyxProvider } from "@/components/TelnyxProvider";
 import CallOverlay from "@/components/CallOverlay";
 import DispositionModal from "@/components/DispositionModal";
 import PowerDialerBanner from "@/components/PowerDialerBanner";
+import PowerDialerFromPicker from "@/components/PowerDialerFromPicker";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-w-0">{children}</main>
         <CallOverlay />
         <DispositionModal />
+        <PowerDialerFromPicker />
         <PowerDialerBanner />
       </div>
     </TelnyxProvider>

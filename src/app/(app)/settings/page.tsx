@@ -13,6 +13,8 @@ export default function SettingsPage() {
   const [label, setLabel] = useState("");
   const autoRotation = useTelnyxStore((s) => s.autoRotation);
   const setAutoRotation = useTelnyxStore((s) => s.setAutoRotation);
+  const pickFromPerCall = useTelnyxStore((s) => s.pickFromPerCall);
+  const setPickFromPerCall = useTelnyxStore((s) => s.setPickFromPerCall);
 
   async function load() {
     const r = await fetch("/api/numbers");
@@ -139,6 +141,36 @@ export default function SettingsPage() {
             </p>
           </div>
         )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-sm uppercase tracking-wider text-muted">Power dialer</h2>
+        <p className="text-xs text-muted mt-1">
+          Controls behavior between calls when running a power dialer queue from Leads.
+        </p>
+
+        <div className="mt-4 card p-4 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium">Pick "From" number before each call</div>
+            <div className="text-xs text-muted mt-0.5">
+              {pickFromPerCall
+                ? "Active — a picker appears before every call in the queue"
+                : "Off — uses your selected number (or auto-rotation) without prompting"}
+            </div>
+          </div>
+          <button
+            onClick={() => setPickFromPerCall(!pickFromPerCall)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              pickFromPerCall ? "bg-accent" : "bg-border"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                pickFromPerCall ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
       </section>
 
       <section className="mt-10">

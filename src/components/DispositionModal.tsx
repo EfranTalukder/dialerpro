@@ -20,6 +20,8 @@ export default function DispositionModal() {
   const setPending = useTelnyxStore((s) => s.setPendingDisposition);
   const powerDialer = useTelnyxStore((s) => s.powerDialer);
   const advancePower = useTelnyxStore((s) => s.advancePowerDialer);
+  const pickFromPerCall = useTelnyxStore((s) => s.pickFromPerCall);
+  const setPendingNextCall = useTelnyxStore((s) => s.setPendingNextCall);
   const { startCall } = useTelnyx();
 
   const [disp, setDisp] = useState<string>("");
@@ -80,13 +82,16 @@ export default function DispositionModal() {
   function maybeAdvanceQueue() {
     if (!powerDialer) return;
     const next = advancePower();
-    if (next) {
-      setTimeout(() => {
-        startCall(next.phone, { leadId: next.id }).catch((e: Error) => {
-          console.error("power dialer call failed", e);
-        });
-      }, 600);
+    if (!next) return;
+    if (pickFromPerCall) {
+      setPendingNextCall(next);
+      return;
     }
+    setTimeout(() => {
+      startCall(next.phone, { leadId: next.id }).catch((e: Error) => {
+        console.error("power dialer call failed", e);
+      });
+    }, 600);
   }
 
   return (
