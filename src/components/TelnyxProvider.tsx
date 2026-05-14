@@ -6,250 +6,269 @@ import { pickRotatedNumber, useTelnyxStore } from "@/lib/telnyx-store";
 import { toE164 } from "@/lib/utils";
 
 type TelnyxCall = {
-  id: string;
-  remoteCallerNumber?: string;
-  remoteStream?: MediaStream;
-  options?: { destinationNumber?: string; callerNumber?: string };
-  hangup: () => void;
-  answer: () => void;
-  hold?: () => void;
-  unhold?: () => void;
-  muteAudio?: () => void;
-  unmuteAudio?: () => void;
-  dtmf?: (digit: string) => void;
-  state?: string;
+    id: string;
+    remoteCallerNumber?: string;
+    remoteStream?: MediaStream;
+    options?: { destinationNumber?: string; callerNumber?: string };
+    hangup: () => void;
+    answer: () => void;
+    hold?: () => void;
+    unhold?: () => void;
+    muteAudio?: () => void;
+    unmuteAudio?: () => void;
+    dtmf?: (digit: string) => void;
+    state?: string;
 };
 
 type Ctx = {
-  client: TelnyxRTC | null;
-  startCall: (
-    destination: string,
-    opts?: { fromNumber?: string; leadId?: string | null },
-  ) => Promise<void>;
-  hangup: () => void;
-  toggleMute: () => void;
-  toggleHold: () => void;
-  sendDTMF: (digit: string) => void;
-  answer: () => void;
+    client: TelnyxRTC | null;
+    startCall: (
+      destination: string,
+      opts?: { fromNumber?: string; leadId?: string | null },
+    ) => Promise<void>;
+    hangup: () => void;
+    toggleMute: () => void;
+    toggleHold: () => void;
+    sendDTMF: (digit: string) => void;
+    answer: () => void;
 };
 
 const TelnyxContext = createContext<Ctx | null>(null);
 
 export function useTelnyx() {
-  const ctx = useContext(TelnyxContext);
-  if (!ctx) throw new Error("TelnyxProvider missing");
-  return ctx;
+    const ctx = useContext(TelnyxContext);
+    if (!ctx) throw new Error("TelnyxProvider missing");
+    return ctx;
 }
 
 export function TelnyxProvider({ children }: { children: React.ReactNode }) {
-  const [client, setClient] = useState<TelnyxRTC | null>(null);
-  const currentCall = useRef<TelnyxCall | null>(null);
-  const currentLeadId = useRef<string | null>(null);
-  const localCallRowId = useRef<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [client, setClient] = useState<TelnyxRTC | null>(null);
+    const currentCall = useRef<TelnyxCall | null>(null);
+    const currentLeadId = useRef<string | null>(null);
+    const localCallRowId = useRef<string | null>(null);
+    // Track the callControlId so we can look up the DB row after webhook creates it
+  const pendingCallControlId = useRef<string | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const {
-    setReady,
-    setRegistering,
-    setRegistrationError,
-    setNumbers,
-    setActiveCall,
-    updateActiveCall,
-    selectedFromNumber,
+        setReady,
+        setRegistering,
+        setRegistrationError,
+        setNumbers,
+        setActiveCall,
+        updateActiveCall,
+        selectedFromNumber,
   } = useTelnyxStore();
 
   useEffect(() => {
-    let canceled = false;
-    let rtc: TelnyxRTC | null = null;
+        let canceled = false;
+        let rtc: TelnyxRTC | null = null;
 
-    async function bootstrap() {
-      setRegistering(true);
-      setRegistrationError(null);
-      try {
-        const [credsRes, numsRes] = await Promise.all([
-          fetch("/api/telnyx/credentials"),
-          fetch("/api/numbers"),
-        ]);
-        if (!credsRes.ok) throw new Error("creds_fetch_failed");
-        const creds = await credsRes.json();
-        const nums = numsRes.ok ? await numsRes.json() : [];
-        if (canceled) return;
-        setNumbers(nums.map((n: { id: number; e164: string; label: string | null }) => n));
+                async function bootstrap() {
+                        setRegistering(true);
+                        setRegistrationError(null);
+                        try {
+                                  const [credsRes, numsRes] = await Promise.all([
+                                              fetch("/api/telnyx/credentials"),
+                                              fetch("/api/numbers"),
+                                            ]);
+                                  if (!credsRes.ok) throw new Error("creds_fetch_failed");
+                                  const creds = await credsRes.json();
+                                  const nums = numsRes.ok ? await numsRes.json() : [];
+                                  if (canceled) return;
+                                  setNumbers(nums.map((n: { id: number; e164: string; label: string | null }) => n));
 
-        rtc = new TelnyxRTC({ login: creds.login, password: creds.password });
+                          rtc = new TelnyxRTC({ login: creds.login, password: creds.password });
 
-        rtc.on("telnyx.ready", () => {
-          if (canceled) return;
-          setReady(true);
-          setRegistering(false);
-        });
+                          rtc.on("telnyx.ready", () => {
+                                      if (canceled) return;
+                                      setReady(true);
+                                      setRegistering(false);
+                          });
 
-        rtc.on("telnyx.error", (err: unknown) => {
-          console.error("telnyx.error", err);
-          if (canceled) return;
-          setRegistrationError(String((err as Error)?.message ?? err));
-          setRegistering(false);
-        });
+                          rtc.on("telnyx.error", (err: unknown) => {
+                                      console.error("telnyx.error", err);
+                                      if (canceled) return;
+                                      setRegistrationError(String((err as Error)?.message ?? err));
+                                      setRegistering(false);
+                          });
 
-        rtc.on("telnyx.socket.close", () => {
-          if (canceled) return;
-          setReady(false);
-        });
+                          rtc.on("telnyx.socket.close", () => {
+                                      if (canceled) return;
+                                      setReady(false);
+                          });
 
-        rtc.on("telnyx.notification", (n: { type: string; call?: TelnyxCall }) => {
-          if (n.type !== "callUpdate" || !n.call) return;
-          const call = n.call;
-          const state = (call.state ?? "").toLowerCase();
-          currentCall.current = call;
+                          rtc.on("telnyx.notification", (n: { type: string; call?: TelnyxCall }) => {
+                                      if (n.type !== "callUpdate" || !n.call) return;
+                                      const call = n.call;
+                                      const state = (call.state ?? "").toLowerCase();
+                                      currentCall.current = call;
 
-          if (state === "ringing" || state === "trying" || state === "new") {
-            const remote =
-              call.remoteCallerNumber ?? call.options?.destinationNumber ?? "unknown";
-            const local =
-              call.options?.callerNumber ?? selectedFromNumber ?? null;
-            const dir: "outbound" | "inbound" = call.options?.destinationNumber
-              ? "outbound"
-              : "inbound";
-            setActiveCall({
-              id: call.id,
-              direction: dir,
-              remote,
-              localNumber: local,
-              startedAt: Date.now(),
-              state: dir === "outbound" ? "connecting" : "ringing",
-              muted: false,
-            });
-          } else if (state === "active") {
-            updateActiveCall({ state: "active" });
-            if (call.remoteStream && audioRef.current) {
-              audioRef.current.srcObject = call.remoteStream;
-              audioRef.current.play().catch((e) => console.warn("audio play failed", e));
-            }
-          } else if (state === "held") {
-            updateActiveCall({ state: "held" });
-          } else if (state === "hangup" || state === "destroy") {
-            updateActiveCall({ state: "ended" });
-            if (audioRef.current) {
-              audioRef.current.srcObject = null;
-            }
-            const rowId = localCallRowId.current;
-            const remoteForDisp =
-              call.remoteCallerNumber ?? call.options?.destinationNumber ?? "";
-            const leadForDisp = currentLeadId.current;
-            setTimeout(() => setActiveCall(null), 800);
-            if (rowId) {
-              useTelnyxStore.getState().setPendingDisposition({
-                callRowId: rowId,
-                remote: remoteForDisp,
-                leadId: leadForDisp,
-                endedAt: Date.now(),
-              });
-            }
-            currentCall.current = null;
-            currentLeadId.current = null;
-            localCallRowId.current = null;
-          }
-        });
+                                           if (state === "ringing" || state === "trying" || state === "new") {
+                                                         const remote =
+                                                                         call.remoteCallerNumber ?? call.options?.destinationNumber ?? "unknown";
+                                                         const local =
+                                                                         call.options?.callerNumber ?? selectedFromNumber ?? null;
+                                                         const dir: "outbound" | "inbound" = call.options?.destinationNumber
+                                                           ? "outbound"
+                                                                         : "inbound";
+                                                         setActiveCall({
+                                                                         id: call.id,
+                                                                         direction: dir,
+                                                                         remote,
+                                                                         localNumber: local,
+                                                                         startedAt: Date.now(),
+                                                                         state: dir === "outbound" ? "connecting" : "ringing",
+                                                                         muted: false,
+                                                         });
 
-        rtc.connect();
-        setClient(rtc);
-      } catch (e) {
-        if (canceled) return;
-        setRegistrationError(String((e as Error)?.message ?? e));
-        setRegistering(false);
-      }
-    }
+                                        // Look up the DB row created by the webhook using the callControlId
+                                        // The call.id in Telnyx WebRTC is the call_control_id
+                                        const ccId = pendingCallControlId.current ?? call.id;
+                                                         if (ccId && !localCallRowId.current) {
+                                                                         // Poll briefly for the webhook to create the row
+                                                           let attempts = 0;
+                                                                         const interval = setInterval(async () => {
+                                                                                           attempts++;
+                                                                                           try {
+                                                                                                               const r = await fetch(`/api/calls?callControlId=${encodeURIComponent(ccId)}`);
+                                                                                                               if (r.ok) {
+                                                                                                                                     const rows = await r.json();
+                                                                                                                                     if (Array.isArray(rows) && rows.length > 0 && rows[0]?.call?.id) {
+                                                                                                                                                             localCallRowId.current = rows[0].call.id;
+                                                                                                                                                             clearInterval(interval);
+                                                                                                                                       } else if (Array.isArray(rows) && rows.length > 0 && rows[0]?.id) {
+                                                                                                                                                             localCallRowId.current = rows[0].id;
+                                                                                                                                                             clearInterval(interval);
+                                                                                                                                       }
+                                                                                                                 }
+                                                                                             } catch {}
+                                                                                           if (attempts >= 10) clearInterval(interval);
+                                                                         }, 500);
+                                                         }
+                                           } else if (state === "active") {
+                                                         updateActiveCall({ state: "active" });
+                                                         if (call.remoteStream && audioRef.current) {
+                                                                         audioRef.current.srcObject = call.remoteStream;
+                                                                         audioRef.current.play().catch((e) => console.warn("audio play failed", e));
+                                                         }
+                                           } else if (state === "held") {
+                                                         updateActiveCall({ state: "held" });
+                                           } else if (state === "hangup" || state === "destroy") {
+                                                         updateActiveCall({ state: "ended" });
+                                                         if (audioRef.current) {
+                                                                         audioRef.current.srcObject = null;
+                                                         }
+                                                         const rowId = localCallRowId.current;
+                                                         const remoteForDisp =
+                                                                         call.remoteCallerNumber ?? call.options?.destinationNumber ?? "";
+                                                         const leadForDisp = currentLeadId.current;
+                                                         setTimeout(() => setActiveCall(null), 800);
+                                                         if (rowId) {
+                                                                         useTelnyxStore.getState().setPendingDisposition({
+                                                                                           callRowId: rowId,
+                                                                                           remote: remoteForDisp,
+                                                                                           leadId: leadForDisp,
+                                                                                           endedAt: Date.now(),
+                                                                         });
+                                                         }
+                                                         currentCall.current = null;
+                                                         currentLeadId.current = null;
+                                                         localCallRowId.current = null;
+                                                         pendingCallControlId.current = null;
+                                           }
+                          });
 
-    bootstrap();
-    return () => {
-      canceled = true;
-      try {
-        rtc?.disconnect();
-      } catch {}
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+                          rtc.connect();
+                                  setClient(rtc);
+                        } catch (e) {
+                                  if (canceled) return;
+                                  setRegistrationError(String((e as Error)?.message ?? e));
+                                  setRegistering(false);
+                        }
+                }
+
+                bootstrap();
+        return () => {
+                canceled = true;
+                try {
+                          rtc?.disconnect();
+                } catch {}
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startCall: Ctx["startCall"] = async (destination, opts) => {
-    if (!client) throw new Error("client_not_ready");
-    const to = toE164(destination);
-    const state = useTelnyxStore.getState();
-    let from = opts?.fromNumber ?? state.selectedFromNumber ?? undefined;
-    if (state.autoRotation.enabled && !opts?.fromNumber && state.numbers.length > 0) {
-      const rotated = pickRotatedNumber(state.numbers, state.autoRotation.mode);
-      if (rotated) {
-        from = rotated;
-        state.setSelectedFromNumber(rotated);
-      }
-    }
-    if (!from) throw new Error("no_from_number_selected");
-    currentLeadId.current = opts?.leadId ?? null;
+        if (!client) throw new Error("client_not_ready");
+        const to = toE164(destination);
+        const state = useTelnyxStore.getState();
+        let from = opts?.fromNumber ?? state.selectedFromNumber ?? undefined;
+        if (state.autoRotation.enabled && !opts?.fromNumber && state.numbers.length > 0) {
+                const rotated = pickRotatedNumber(state.numbers, state.autoRotation.mode);
+                if (rotated) {
+                          from = rotated;
+                          state.setSelectedFromNumber(rotated);
+                }
+        }
+        if (!from) throw new Error("no_from_number_selected");
+        currentLeadId.current = opts?.leadId ?? null;
+        localCallRowId.current = null;
+        pendingCallControlId.current = null;
 
-    try {
-      const r = await fetch("/api/calls", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          direction: "outbound",
-          fromNumber: from,
-          toNumber: to,
-          leadId: opts?.leadId ?? null,
-        }),
-      });
-      if (r.ok) {
-        const row = await r.json();
-        localCallRowId.current = row.id;
-      }
-    } catch {}
+        // Do NOT pre-create a call row here — the Telnyx webhook's call.initiated
+        // event is the single source of truth. We look up the row by callControlId
+        // once the notification fires (see telnyx.notification handler above).
 
-    const call = (client as unknown as {
-      newCall: (o: { destinationNumber: string; callerNumber: string }) => TelnyxCall;
-    }).newCall({
-      destinationNumber: to,
-      callerNumber: from,
-    });
-    currentCall.current = call;
+        const call = (client as unknown as {
+                newCall: (o: { destinationNumber: string; callerNumber: string }) => TelnyxCall;
+        }).newCall({
+                destinationNumber: to,
+                callerNumber: from,
+        });
+        currentCall.current = call;
+        // Store the call id so the notification handler can look up the DB row
+        pendingCallControlId.current = call.id ?? null;
   };
 
   const ctx: Ctx = {
-    client,
-    startCall,
-    hangup: () => currentCall.current?.hangup(),
-    answer: () => currentCall.current?.answer(),
-    toggleMute: () => {
-      const c = currentCall.current;
-      if (!c) return;
-      const active = useTelnyxStore.getState().activeCall;
-      if (active?.muted) {
-        c.unmuteAudio?.();
-        updateActiveCall({ muted: false });
-      } else {
-        c.muteAudio?.();
-        updateActiveCall({ muted: true });
-      }
-    },
-    toggleHold: () => {
-      const c = currentCall.current;
-      if (!c) return;
-      const active = useTelnyxStore.getState().activeCall;
-      if (active?.state === "held") {
-        c.unhold?.();
-      } else {
-        c.hold?.();
-      }
-    },
-    sendDTMF: (digit) => currentCall.current?.dtmf?.(digit),
+        client,
+        startCall,
+        hangup: () => currentCall.current?.hangup(),
+        answer: () => currentCall.current?.answer(),
+        toggleMute: () => {
+                const c = currentCall.current;
+                if (!c) return;
+                const active = useTelnyxStore.getState().activeCall;
+                if (active?.muted) {
+                          c.unmuteAudio?.();
+                          updateActiveCall({ muted: false });
+                } else {
+                          c.muteAudio?.();
+                          updateActiveCall({ muted: true });
+                }
+        },
+        toggleHold: () => {
+                const c = currentCall.current;
+                if (!c) return;
+                const active = useTelnyxStore.getState().activeCall;
+                if (active?.state === "held") {
+                          c.unhold?.();
+                } else {
+                          c.hold?.();
+                }
+        },
+        sendDTMF: (digit) => currentCall.current?.dtmf?.(digit),
   };
 
   return (
-    <TelnyxContext.Provider value={ctx}>
-      {/* Hidden audio element for remote call audio */}
-      <audio ref={audioRef} autoPlay playsInline style={{ display: "none" }} />
-      {children}
-    </TelnyxContext.Provider>
-  );
+        <TelnyxContext.Provider value={ctx}>
+          {/* Hidden audio element for remote call audio */}
+                <audio ref={audioRef} autoPlay playsInline style={{ display: "none" }} />
+          {children}
+        </TelnyxContext.Provider>TelnyxContext.Provider>
+      );
 }
 
 export function getLocalCallRowId() {
-  return null;
+    return null;
 }
