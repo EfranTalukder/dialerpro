@@ -6,6 +6,50 @@ import { useTelnyxStore } from "@/lib/telnyx-store";
 import { useTelnyx } from "./TelnyxProvider";
 import { fmtPhone } from "@/lib/utils";
 
+function toLocalInput(d: Date) {
+  const off = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - off).toISOString().slice(0, 16);
+}
+
+function defaultCallbackTime() {
+  const d = new Date();
+  d.setHours(d.getHours() + 24);
+  d.setMinutes(0, 0, 0);
+  return toLocalInput(d);
+}
+
+function CallbackPreset({
+  label,
+  set,
+  hours,
+  nextDay9am,
+}: {
+  label: string;
+  set: (v: string) => void;
+  hours?: number;
+  nextDay9am?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const d = new Date();
+        if (nextDay9am) {
+          d.setDate(d.getDate() + 1);
+          d.setHours(9, 0, 0, 0);
+        } else if (hours) {
+          d.setHours(d.getHours() + hours);
+          d.setMinutes(0, 0, 0);
+        }
+        set(toLocalInput(d));
+      }}
+      className="text-[11px] px-2 py-1 rounded-md bg-bg border border-border hover:border-muted transition-colors"
+    >
+      {label}
+    </button>
+  );
+}
+
 const PRESETS = [
   { value: "interested", label: "Interested", hotkey: "1" },
   { value: "not_interested", label: "Not interested", hotkey: "2" },
@@ -26,11 +70,13 @@ export default function DispositionModal() {
 
   const [disp, setDisp] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [callbackAt, setCallbackAt] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setDisp("");
     setNotes("");
+    setCallbackAt(defaultCallbackTime());
   }, [pending?.callRowId]);
 
   useEffect(() => {
@@ -68,6 +114,16 @@ export default function DispositionModal() {
           leadId: pending.leadId,
         }),
       });
+      if (disp === "callback" && pending.leadId && callbackAt) {
+        await fetch(`/api/leads/${pending.leadId}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            callbackAt: new Date(callbackAt).toISOString(),
+            callbackNotes: notes || null,
+          }),
+        });
+      }
     } catch {}
     setSaving(false);
     setPending(null);
@@ -131,6 +187,26 @@ export default function DispositionModal() {
             </button>
           ))}
         </div>
+
+        {disp === "callback" && pending.leadId && (
+          <div className="mt-3 bg-elevated border border-border rounded-lg p-3">
+            <label className="text-[11px] uppercase tracking-wider text-muted">
+              Schedule callback
+            </label>
+            <input
+              type="datetime-local"
+              value={callbackAt}
+              onChange={(e) => setCallbackAt(e.target.value)}
+              className="input mt-1.5 bg-bg"
+            />
+            <div className="mt-2 flex gap-1.5 flex-wrap">
+              <CallbackPreset label="In 1 hour" set={setCallbackAt} hours={1} />
+              <CallbackPreset label="Tomorrow 9am" set={setCallbackAt} nextDay9am />
+              <CallbackPreset label="In 3 days" set={setCallbackAt} hours={72} />
+              <CallbackPreset label="Next week" set={setCallbackAt} hours={168} />
+            </div>
+          </div>
+        )}
 
         <textarea
           value={notes}

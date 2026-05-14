@@ -36,10 +36,17 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
   const patch: Record<string, unknown> = { updatedAt: new Date() };
-  for (const k of ["name", "phone", "email", "company", "status", "notes"]) {
+  for (const k of ["name", "phone", "email", "company", "status", "notes", "callbackNotes"]) {
     if (k in body) patch[k] = body[k];
   }
   if ("customFields" in body) patch.customFields = body.customFields;
+  if ("callbackAt" in body) {
+    patch.callbackAt = body.callbackAt ? new Date(body.callbackAt) : null;
+    patch.callbackDoneAt = null;
+  }
+  if ("callbackDoneAt" in body) {
+    patch.callbackDoneAt = body.callbackDoneAt ? new Date(body.callbackDoneAt) : null;
+  }
   const [row] = await db.update(leads).set(patch).where(eq(leads.id, id)).returning();
   return NextResponse.json(row);
 }

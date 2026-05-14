@@ -5,6 +5,7 @@ import { Phone } from "lucide-react";
 import { useTelnyx } from "@/components/TelnyxProvider";
 import Dialpad from "@/components/Dialpad";
 import NumberPicker from "@/components/NumberPicker";
+import TodayStats from "@/components/TodayStats";
 import { useTelnyxStore } from "@/lib/telnyx-store";
 import { fmtPhone, toE164 } from "@/lib/utils";
 
@@ -25,7 +26,7 @@ export default function DialerPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto px-6 py-10">
+    <div className="max-w-3xl mx-auto px-6 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Dialer</h1>
       <p className="text-sm text-muted mt-1">
         Pick a number to call from, then dial.
@@ -37,7 +38,9 @@ export default function DialerPage() {
         </div>
       )}
 
-      <div className="mt-6 space-y-3">
+      <TodayStats />
+
+      <div className="mt-6 max-w-md mx-auto space-y-3">
         <NumberPicker />
 
         <input

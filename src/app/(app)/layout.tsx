@@ -4,6 +4,7 @@ import CallOverlay from "@/components/CallOverlay";
 import DispositionModal from "@/components/DispositionModal";
 import PowerDialerBanner from "@/components/PowerDialerBanner";
 import PowerDialerFromPicker from "@/components/PowerDialerFromPicker";
+import QuickCallFAB from "@/components/QuickCallFAB";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <DispositionModal />
         <PowerDialerFromPicker />
         <PowerDialerBanner />
+        <QuickCallFAB />
       </div>
     </TelnyxProvider>
   );
