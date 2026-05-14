@@ -1,6 +1,8 @@
 import Nav from "@/components/Nav";
 import { TelnyxProvider } from "@/components/TelnyxProvider";
 import CallOverlay from "@/components/CallOverlay";
+import DispositionModal from "@/components/DispositionModal";
+import PowerDialerBanner from "@/components/PowerDialerBanner";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,6 +11,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Nav />
         <main className="flex-1 min-w-0">{children}</main>
         <CallOverlay />
+        <DispositionModal />
+        <PowerDialerBanner />
       </div>
     </TelnyxProvider>
   );

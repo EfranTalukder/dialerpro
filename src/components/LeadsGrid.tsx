@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Phone, Plus, Upload, X } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, Phone, Play, Plus, Upload, X } from "lucide-react";
 import { useTelnyx } from "./TelnyxProvider";
 import { useTelnyxStore } from "@/lib/telnyx-store";
 import { fmtPhone } from "@/lib/utils";
@@ -41,8 +42,37 @@ export default function LeadsGrid() {
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
   const [addingCol, setAddingCol] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const ready = useTelnyxStore((s) => s.ready);
+  const activeCall = useTelnyxStore((s) => s.activeCall);
+  const startPower = useTelnyxStore((s) => s.startPowerDialer);
   const { startCall } = useTelnyx();
+
+  function toggleSelected(id: string) {
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    setSelected((cur) =>
+      cur.size === leads.length ? new Set() : new Set(leads.map((l) => l.id)),
+    );
+  }
+
+  function startPowerDialer() {
+    const queue = leads
+      .filter((l) => selected.has(l.id) && l.phone)
+      .map((l) => ({ id: l.id, phone: l.phone, name: l.name }));
+    if (queue.length === 0) return;
+    startPower(queue);
+    setSelected(new Set());
+    const first = queue[0];
+    startCall(first.phone, { leadId: first.id }).catch((e: Error) => alert(e.message));
+  }
 
   const load = useCallback(async () => {
     const [l, c] = await Promise.all([
@@ -96,6 +126,16 @@ export default function LeadsGrid() {
             placeholder="Search…"
             className="input w-56"
           />
+          {selected.size > 0 && (
+            <button
+              onClick={startPowerDialer}
+              disabled={!ready || !!activeCall}
+              className="btn btn-primary disabled:opacity-40"
+              title={!ready ? "Wait for registration" : ""}
+            >
+              <Play size={16} /> Power dial ({selected.size})
+            </button>
+          )}
           <button onClick={() => setAdding(true)} className="btn btn-outline">
             <Plus size={16} /> Add lead
           </button>
@@ -122,18 +162,34 @@ export default function LeadsGrid() {
         <table className="w-full text-sm">
           <thead className="bg-elevated text-muted text-xs uppercase tracking-wider">
             <tr>
+              <th className="px-3 py-2 w-8">
+                <input
+                  type="checkbox"
+                  checked={leads.length > 0 && selected.size === leads.length}
+                  onChange={selectAllVisible}
+                  className="accent-accent"
+                />
+              </th>
               <th className="text-left px-3 py-2 w-10"></th>
               {allColumns.map((c) => (
                 <th key={c.key} className="text-left px-3 py-2 font-normal whitespace-nowrap">
                   {c.label}
                 </th>
               ))}
-              <th className="w-10"></th>
+              <th className="w-16"></th>
             </tr>
           </thead>
           <tbody>
             {leads.map((l) => (
               <tr key={l.id} className="border-t border-border hover:bg-elevated/50 group">
+                <td className="px-3 py-1.5">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(l.id)}
+                    onChange={() => toggleSelected(l.id)}
+                    className="accent-accent"
+                  />
+                </td>
                 <td className="px-2 py-1.5">
                   <button
                     disabled={!ready}
@@ -173,17 +229,26 @@ export default function LeadsGrid() {
                     />
                   );
                 })}
-                <td className="px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => remove(l.id)} className="text-muted hover:text-danger">
-                    <X size={14} />
-                  </button>
+                <td className="px-2 py-1.5">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link
+                      href={`/leads/${l.id}`}
+                      className="text-muted hover:text-text p-1"
+                      title="Open details"
+                    >
+                      <ExternalLink size={14} />
+                    </Link>
+                    <button onClick={() => remove(l.id)} className="text-muted hover:text-danger p-1" title="Delete">
+                      <X size={14} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
             {leads.length === 0 && (
               <tr>
                 <td
-                  colSpan={allColumns.length + 2}
+                  colSpan={allColumns.length + 3}
                   className="px-3 py-12 text-center text-muted text-sm"
                 >
                   No leads yet. Add one or import a CSV.

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/db";
-import { leads, calls } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { leads, calls, recordings, customColumns } from "@/db/schema";
+import { eq, desc, asc } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
@@ -12,12 +12,21 @@ export async function GET(
   const { id } = await params;
   const [lead] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
   if (!lead) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
   const history = await db
-    .select()
+    .select({
+      call: calls,
+      recordingUrl: recordings.url,
+      recordingId: recordings.id,
+    })
     .from(calls)
+    .leftJoin(recordings, eq(recordings.callId, calls.id))
     .where(eq(calls.leadId, id))
     .orderBy(desc(calls.startedAt));
-  return NextResponse.json({ lead, calls: history });
+
+  const cols = await db.select().from(customColumns).orderBy(asc(customColumns.position));
+
+  return NextResponse.json({ lead, calls: history, customColumns: cols });
 }
 
 export async function PATCH(

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { TelnyxRTC } from "@telnyx/webrtc";
-import { useTelnyxStore } from "@/lib/telnyx-store";
+import { pickRotatedNumber, useTelnyxStore } from "@/lib/telnyx-store";
 import { toE164 } from "@/lib/utils";
 
 type TelnyxCall = {
@@ -132,7 +132,19 @@ export function TelnyxProvider({ children }: { children: React.ReactNode }) {
             if (audioRef.current) {
               audioRef.current.srcObject = null;
             }
+            const rowId = localCallRowId.current;
+            const remoteForDisp =
+              call.remoteCallerNumber ?? call.options?.destinationNumber ?? "";
+            const leadForDisp = currentLeadId.current;
             setTimeout(() => setActiveCall(null), 800);
+            if (rowId) {
+              useTelnyxStore.getState().setPendingDisposition({
+                callRowId: rowId,
+                remote: remoteForDisp,
+                leadId: leadForDisp,
+                endedAt: Date.now(),
+              });
+            }
             currentCall.current = null;
             currentLeadId.current = null;
             localCallRowId.current = null;
@@ -161,7 +173,15 @@ export function TelnyxProvider({ children }: { children: React.ReactNode }) {
   const startCall: Ctx["startCall"] = async (destination, opts) => {
     if (!client) throw new Error("client_not_ready");
     const to = toE164(destination);
-    const from = opts?.fromNumber ?? selectedFromNumber ?? undefined;
+    const state = useTelnyxStore.getState();
+    let from = opts?.fromNumber ?? state.selectedFromNumber ?? undefined;
+    if (state.autoRotation.enabled && !opts?.fromNumber && state.numbers.length > 0) {
+      const rotated = pickRotatedNumber(state.numbers, state.autoRotation.mode);
+      if (rotated) {
+        from = rotated;
+        state.setSelectedFromNumber(rotated);
+      }
+    }
     if (!from) throw new Error("no_from_number_selected");
     currentLeadId.current = opts?.leadId ?? null;
 
