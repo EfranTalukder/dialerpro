@@ -265,7 +265,7 @@ export function TelnyxProvider({ children }: { children: React.ReactNode }) {
           {/* Hidden audio element for remote call audio */}
                 <audio ref={audioRef} autoPlay playsInline style={{ display: "none" }} />
           {children}
-        </TelnyxContext.Provider>TelnyxContext.Provider>
+        </TelnyxContext.Provider>
       );
 }
 
