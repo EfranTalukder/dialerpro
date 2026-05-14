@@ -262,19 +262,28 @@ function Field({
 }) {
   const [v, setV] = useState(value ?? "");
   useEffect(() => setV(value ?? ""), [value]);
-  const Tag = (multiline ? "textarea" : "input") as "input";
+  const commit = () => {
+    if (v !== value) onSave(v);
+  };
   return (
     <div className="mb-3 last:mb-0">
       <label className="text-[11px] uppercase tracking-wider text-muted">{label}</label>
-      <Tag
-        value={v}
-        onChange={(e) => setV(e.target.value)}
-        onBlur={() => {
-          if (v !== value) onSave(v);
-        }}
-        rows={multiline ? 3 : undefined}
-        className="input mt-1"
-      />
+      {multiline ? (
+        <textarea
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          onBlur={commit}
+          rows={3}
+          className="input mt-1 resize-none"
+        />
+      ) : (
+        <input
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          onBlur={commit}
+          className="input mt-1"
+        />
+      )}
     </div>
   );
 }
