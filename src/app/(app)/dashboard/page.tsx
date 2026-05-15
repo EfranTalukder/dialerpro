@@ -92,7 +92,7 @@ export default function DashboardPage() {
           return () => { alive = false; clearInterval(t); };
   }, []);
 
-  if (!stats) return <div className="p-6 text-sm text-muted">Loading…</div>div>;
+  if (!stats) return <div className="p-6 text-sm text-muted">Loading…</div>;
     
       const connectRate = stats.week.total > 0 ? Math.round((stats.week.answered / stats.week.total) * 100) : 0;
       const dispTotal = stats.dispositions.reduce((s, d) => s + d.count, 0);
