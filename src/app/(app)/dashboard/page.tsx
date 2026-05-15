@@ -259,4 +259,4 @@ function DailyTrend({ rows }: { rows: { day: string; count: number; answered: nu
               })}
               </div>
             );
-}</div>
+}
