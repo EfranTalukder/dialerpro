@@ -131,49 +131,54 @@ function Section({
         {rows.map((l) => {
           const isOverdue = l.callbackAt && new Date(l.callbackAt).getTime() < now;
           return (
-            <div key={l.id} className="card p-4 flex items-center gap-4">
-              <div
-                className={cn(
-                  "w-10 h-10 grid place-items-center rounded-lg",
-                  isOverdue ? "bg-danger/15 text-danger" : "bg-elevated text-muted",
-                )}
-              >
-                <Clock size={16} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <Link
-                  href={`/leads/${l.id}`}
-                  className="text-sm font-medium hover:underline"
+            <div
+              key={l.id}
+              className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
+            >
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div
+                  className={cn(
+                    "w-10 h-10 grid place-items-center rounded-lg shrink-0",
+                    isOverdue ? "bg-danger/15 text-danger" : "bg-elevated text-muted",
+                  )}
                 >
-                  {l.name || fmtPhone(l.phone)}
-                </Link>
-                {l.company && (
-                  <span className="ml-2 text-xs text-muted">{l.company}</span>
-                )}
-                <div className="text-xs text-muted mt-0.5">
-                  {l.callbackAt && new Date(l.callbackAt).toLocaleString()} ·{" "}
-                  <span className={cn(isOverdue && "text-danger")}>
-                    {l.callbackAt && relTime(l.callbackAt)}
-                  </span>
+                  <Clock size={16} />
                 </div>
-                {l.callbackNotes && (
-                  <p className="text-xs text-muted mt-1 italic whitespace-pre-wrap">
-                    {l.callbackNotes}
-                  </p>
-                )}
+                <div className="flex-1 min-w-0">
+                  <Link
+                    href={`/leads/${l.id}`}
+                    className="text-sm font-medium hover:underline break-words"
+                  >
+                    {l.name || fmtPhone(l.phone)}
+                  </Link>
+                  {l.company && (
+                    <span className="ml-2 text-xs text-muted">{l.company}</span>
+                  )}
+                  <div className="text-xs text-muted mt-0.5">
+                    {l.callbackAt && new Date(l.callbackAt).toLocaleString()} ·{" "}
+                    <span className={cn(isOverdue && "text-danger")}>
+                      {l.callbackAt && relTime(l.callbackAt)}
+                    </span>
+                  </div>
+                  {l.callbackNotes && (
+                    <p className="text-xs text-muted mt-1 italic whitespace-pre-wrap">
+                      {l.callbackNotes}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:shrink-0">
                 <button
                   disabled={!canCall}
                   onClick={() => onCall(l)}
-                  className="btn btn-primary text-xs disabled:opacity-40"
+                  className="btn btn-primary text-xs disabled:opacity-40 flex-1 sm:flex-none"
                   title="Call now"
                 >
                   <Phone size={14} /> Call
                 </button>
                 <button
                   onClick={() => onDone(l.id)}
-                  className="btn btn-outline text-xs"
+                  className="btn btn-outline text-xs flex-1 sm:flex-none"
                   title="Mark done"
                 >
                   <Check size={14} /> Done

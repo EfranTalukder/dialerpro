@@ -123,44 +123,55 @@ export default function LeadsGrid() {
 
   return (
     <div className="p-4 sm:p-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Leads</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:flex-wrap">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search…"
+            placeholder="Search leads…"
             className="input w-full sm:w-56"
           />
-          {selected.size > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {selected.size > 0 && (
+              <button
+                onClick={startPowerDialer}
+                disabled={!ready || !!activeCall}
+                className="btn btn-primary disabled:opacity-40 flex-1 sm:flex-none"
+                title={!ready ? "Wait for registration" : ""}
+              >
+                <Play size={16} /> Power dial ({selected.size})
+              </button>
+            )}
             <button
-              onClick={startPowerDialer}
-              disabled={!ready || !!activeCall}
-              className="btn btn-primary disabled:opacity-40"
-              title={!ready ? "Wait for registration" : ""}
+              onClick={() => setAdding(true)}
+              className="btn btn-outline flex-1 sm:flex-none"
+              aria-label="Add lead"
             >
-              <Play size={16} /> Power dial ({selected.size})
+              <Plus size={16} /> <span>Add lead</span>
             </button>
-          )}
-          <button onClick={() => setAdding(true)} className="btn btn-outline">
-            <Plus size={16} /> <span className="hidden sm:inline">Add lead</span>
-          </button>
-          <button onClick={() => setAddingCol(true)} className="btn btn-outline">
-            <Plus size={16} /> <span className="hidden sm:inline">Column</span>
-          </button>
-          <label className="btn btn-outline cursor-pointer">
-            <Upload size={16} /> <span className="hidden sm:inline">CSV</span>
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) importCSV(f);
-                e.target.value = "";
-              }}
-            />
-          </label>
+            <button
+              onClick={() => setAddingCol(true)}
+              className="btn btn-outline flex-1 sm:flex-none"
+              aria-label="Add column"
+            >
+              <Plus size={16} /> <span className="hidden sm:inline">Column</span>
+              <span className="sm:hidden">Column</span>
+            </button>
+            <label className="btn btn-outline cursor-pointer flex-1 sm:flex-none">
+              <Upload size={16} /> <span>CSV</span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importCSV(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </div>
       </div>
 

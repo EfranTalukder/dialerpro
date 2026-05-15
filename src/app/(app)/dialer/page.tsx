@@ -26,9 +26,9 @@ export default function DialerPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-4 sm:pt-10 pb-8">
       <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Dialer</h1>
-      <p className="text-sm text-muted mt-1">
+      <p className="text-sm text-muted mt-1 hidden sm:block">
         Pick a number to call from, then dial.
       </p>
 
@@ -40,7 +40,7 @@ export default function DialerPage() {
 
       <TodayStats />
 
-      <div className="mt-6 max-w-md mx-auto space-y-3">
+      <div className="mt-4 sm:mt-6 max-w-md mx-auto space-y-3">
         <NumberPicker />
 
         <input
@@ -49,7 +49,7 @@ export default function DialerPage() {
           value={dest}
           onChange={(e) => setDest(e.target.value)}
           placeholder="Number to call"
-          className="input text-center text-xl tracking-wide"
+          className="input text-center text-2xl sm:text-xl tracking-wide py-3 sm:py-2"
         />
         <div className="text-center text-xs text-muted h-4">
           {dest && toE164(dest) !== dest ? fmtPhone(toE164(dest)) : ""}
@@ -64,9 +64,9 @@ export default function DialerPage() {
           type="button"
           onClick={call}
           disabled={!ready || !dest || !!active}
-          className="w-full btn btn-primary py-3 text-base disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full btn btn-primary py-4 sm:py-3 text-base disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-transform"
         >
-          <Phone size={18} /> Call
+          <Phone size={20} /> Call
         </button>
       </div>
     </div>
